@@ -18,10 +18,17 @@
 
 export RESTIC_REPOSITORY="b2:<b2-repo-name>"   # *EDIT* fill with your repo name
 
-# What to backup. Colon-separated paths e.g. to different mountpoints "/home:/mnt/usb_disk".
-# To backup only your home directory, set "/home/your-user"
-export RESTIC_BACKUP_PATHS=""  # *EDIT* fill conveniently with one or multiple paths
+# Which snapper config to back-up. Script changes directory to the latest snapshot
+# and backups relative paths to pretend like it is root.
+export SNAPPER_CONFIG="home" # *EDIT* choose snapper config
 
+# Export snapper envvars
+. <(snapper -c home --jsonout get-config | jq -r 'to_entries|map("export SNAPPER_\(.key)=\"\(.value|tostring)\"")|.[]')
+# Get latest snapshot for this config
+export SNAPPER_LATEST=$(snapper -c "${SNAPPER_CONFIG}" --csvout list --columns number | tail -n 1)
+
+cd "${SNAPPER_SUBVOLUME}/.snapshots/${SNAPPER_LATEST}/snapshot"
+export RESTIC_BACKUP_PATHS="." # *EDIT* choose paths relative to the snapshot base
 
 # Example below of how to dynamically add a path that is mounted e.g. external USB disk.
 # restic does not fail if a specified path is not mounted, but it's nicer to only add if they are available.
