@@ -27,12 +27,9 @@ export SNAPPER_CONFIG="home" # *EDIT* choose snapper config
 # Get latest snapshot for this config
 export SNAPPER_LATEST=$(snapper -c "${SNAPPER_CONFIG}" --csvout list --columns number | tail -n 1)
 
-cd "${SNAPPER_SUBVOLUME}/.snapshots/${SNAPPER_LATEST}/snapshot"
-export RESTIC_BACKUP_PATHS="." # *EDIT* choose paths relative to the snapshot base
-
-# Example below of how to dynamically add a path that is mounted e.g. external USB disk.
-# restic does not fail if a specified path is not mounted, but it's nicer to only add if they are available.
-#test -d /mnt/media && RESTIC_BACKUP_PATHS+=" /mnt/media"
+export SNAPPER_SNAPSHOT="${SNAPPER_SUBVOLUME}/.snapshots/${SNAPPER_LATEST}/snapshot"
+export RESTIC_BACKUP_PATH="/mnt/restic-${SNAPPER_CONFIG}" # *EDIT* Choose a mountpoint to act as base of backup
+export RESTIC_BACKUP_SUBDIR="" # *EDIT* Choose which subdirectory of snapshot to backup, relative to SNAPPER_SNAPSHOT
 
 # A tag to identify backup snapshots.
 export RESTIC_BACKUP_TAG=systemd.timer

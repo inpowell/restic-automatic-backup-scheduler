@@ -74,16 +74,15 @@ notifyBackupStats() {
 # ------------
 
 assert_envvars \
-	RESTIC_BACKUP_PATHS RESTIC_BACKUP_TAG \
+	RESTIC_BACKUP_PATH RESTIC_BACKUP_TAG \
 	RESTIC_BACKUP_EXCLUDE_FILE RESTIC_BACKUP_EXTRA_ARGS RESTIC_REPOSITORY RESTIC_VERBOSITY_LEVEL \
-	RESTIC_RETENTION_HOURS RESTIC_RETENTION_DAYS RESTIC_RETENTION_MONTHS RESTIC_RETENTION_WEEKS RESTIC_RETENTION_YEARS
+	RESTIC_RETENTION_HOURS RESTIC_RETENTION_DAYS RESTIC_RETENTION_MONTHS RESTIC_RETENTION_WEEKS RESTIC_RETENTION_YEARS \
+	SNAPPER_CONFIG SNAPPER_SNAPSHOT
 
 warn_on_missing_envvars \
 	AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY B2_CONNECTIONS \
 	RESTIC_PASSWORD_FILE
 
-# Convert to arrays, as arrays should be used to build command lines. See https://github.com/koalaman/shellcheck/wiki/SC2086
-IFS=':' read -ra backup_paths <<< "$RESTIC_BACKUP_PATHS"
 
 # Convert to array, an preserve spaces. See #111
 backup_extra_args=( )
@@ -104,17 +103,18 @@ test -x "$PRE_SCRIPT" && "$PRE_SCRIPT"
 # NOTE that restic will fail the backup if not all listed --exclude-files exist. Thus we should only list them if they are really all available.
 ##  Global backup configuration.
 exclusion_args=(--exclude-file "$RESTIC_BACKUP_EXCLUDE_FILE")
-## Self-contained backup exclusion files per backup path. E.g. having an USB disk at /mnt/media in RESTIC_BACKUP_PATHS,
-# then a file /mnt/media/.backup_exclude.txt will automatically be detected and used:
-for backup_path in "${backup_paths[@]}"; do
-	if [ -f "$backup_path/.backup_exclude.txt" ]; then
-		exclusion_args=("${exclusion_args[@]}" --exclude-file "$backup_path/.backup_exclude.txt")
-	fi
-done
 
 # --one-file-system is not supportd on Windows (=msys).
 FS_ARG=
 test "$OSTYPE" = msys || FS_ARG=--one-file-system
+
+test -d "$RESTIC_BACKUP_PATH" || mkdir -p "$RESTIC_BACKUP_PATH"
+mountpoint -q "$RESTIC_BACKUP_PATH" && umount --recursive "$RESTIC_BACKUP_PATH"
+if [ -z "$(ls -A "$RESTIC_BACKUP_PATH")" ]; then
+	printf "%s must be empty for this script to work" "$RESTIC_BACKUP_PATH"
+	exit 2
+fi
+mount --bind "$SNAPPER_SNAPSHOT" "$RESTIC_BACKUP_PATH"
 
 # NOTE start all commands in background and wait for them to finish.
 # Reason: bash ignores any signals while child process is executing and thus the trap exit hook is not triggered.
@@ -136,7 +136,7 @@ restic backup \
 	"${B2_ARG[@]}" \
 	"${exclusion_args[@]}" \
 	"${backup_extra_args[@]}" \
-	"${backup_paths[@]}" &
+	"${RESTIC_BACKUP_PATH}/${RESTIC_BACKUP_SUBDIR}" &
 wait $!
 
 # Dereference and delete/prune old backups.
