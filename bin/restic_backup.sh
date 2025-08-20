@@ -110,7 +110,7 @@ test "$OSTYPE" = msys || FS_ARG=--one-file-system
 
 test -d "$RESTIC_BACKUP_PATH" || mkdir -p "$RESTIC_BACKUP_PATH"
 mountpoint -q "$RESTIC_BACKUP_PATH" && umount --recursive "$RESTIC_BACKUP_PATH"
-if [ -z "$(ls -A "$RESTIC_BACKUP_PATH")" ]; then
+if [ -n "$(ls -A "$RESTIC_BACKUP_PATH")" ]; then
 	printf "%s must be empty for this script to work" "$RESTIC_BACKUP_PATH"
 	exit 2
 fi
