@@ -23,7 +23,7 @@ export RESTIC_REPOSITORY="b2:<b2-repo-name>"   # *EDIT* fill with your repo name
 export SNAPPER_CONFIG="home" # *EDIT* choose snapper config
 
 # Export snapper envvars
-. <(snapper -c home --jsonout get-config | jq -r 'to_entries|map("export SNAPPER_\(.key)=\"\(.value|tostring)\"")|.[]')
+. <(snapper -c "${SNAPPER_CONFIG}" --jsonout get-config | jq -r 'to_entries|map("export SNAPPER_\(.key)=\"\(.value|tostring)\"")|.[]')
 # Get latest snapshot for this config
 export SNAPPER_LATEST=$(snapper -c "${SNAPPER_CONFIG}" --csvout list --columns number | tail -n 1)
 
