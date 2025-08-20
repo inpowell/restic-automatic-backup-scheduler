@@ -79,7 +79,7 @@ assert_envvars \
 	RESTIC_RETENTION_HOURS RESTIC_RETENTION_DAYS RESTIC_RETENTION_MONTHS RESTIC_RETENTION_WEEKS RESTIC_RETENTION_YEARS
 
 warn_on_missing_envvars \
-	B2_ACCOUNT_ID B2_ACCOUNT_KEY B2_CONNECTIONS \
+	AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY B2_CONNECTIONS \
 	RESTIC_PASSWORD_FILE
 
 # Convert to arrays, as arrays should be used to build command lines. See https://github.com/koalaman/shellcheck/wiki/SC2086
